@@ -17,22 +17,18 @@ class Deck {
         shuffle()
     }
 
-    fun shuffle() {
-        cards.shuffle();
+    private fun shuffle() {
+        cards.shuffle()
     }
 
     fun next(): Card {
-        val c = cards[0]
-        cards.removeAt(0)
-        return c
+        return next(1)[0]
     }
 
     fun next(size: Int): List<Card> {
-        val cards = mutableListOf<Card>()
-        for (i in 0..size) {
-            cards.add(next())
-        }
-        return cards
+        val nextCards = cards.take(size)
+        cards.removeAll(nextCards)
+        return nextCards
     }
 
 }
@@ -49,9 +45,7 @@ class Hand(listOfCards: List<Card>) : Comparable<Hand> {
         if (this === other) return true
 
         val otherHand: Hand = other as Hand
-
-        cards.toMutableList().containsAll(otherHand.cards.toMutableList())
-        return true
+        return cards.toMutableList().containsAll(otherHand.cards.toMutableList())
     }
 
     override fun toString(): String {
@@ -88,6 +82,12 @@ class Hand(listOfCards: List<Card>) : Comparable<Hand> {
         } else {
             rank.compareTo(other.rank)
         }
+    }
+
+    override fun hashCode(): Int {
+        var result = cards.hashCode()
+        result = 31 * result + rank.hashCode()
+        return result
     }
 
 }
@@ -154,7 +154,7 @@ enum class Rank {
                 }
             }
         }
-
+        // TODO(anlcan) surely there is smart way of doing this.
         fun isOrdered(cards: List<Card>): Boolean {
             val sorted = cards.sortedByDescending { c -> c.value }
             val diff = sorted.take(4)
@@ -163,9 +163,8 @@ enum class Rank {
             return listOf(4, 3, 2, 1) == diff
         }
 
-        // sanki groupBy daha iyi ?
         fun isSameSuit(cards: List<Card>): Boolean {
-            return cards.take(4).all { c -> cards[4].suit == c.suit }
+            return cards.groupBy { it.suit }.values.any{ it.size==5}
         }
     }
 }
@@ -182,24 +181,36 @@ data class Card(val suit: Suit, val value: Value) : Comparable<Card> {
 }
 
 /**
- * &spades;	&hearts;	&diams;	&clubs;
- * U+2664	U+2661	U+2662	U+2667
+ * &spades;	    &hearts;	&diams;	    &clubs;
+ * U+2664	    U+2661	    U+2662	    U+2667
  */
-enum class Suit(val rep: String) {
+enum class Suit(private val rep: String) {
     Spades("\u2664"),
     Hearts("\u2661"),
     Diamonds("\u2662"),
     Clubs("\u2667");
 
     override fun toString(): String {
-        return rep;
+        return rep
     }
 }
 
-enum class Value(val rep: String) {
-    TWO("2"), THREE("3"), FOUR("4"), FIVE("5"), SIX("6"), SEVEN("7"), EIGHT("8"), NINE("9"), TEN("10"), JACK("J"), QUEEN("Q"), KING("K"), ACE("A");
+enum class Value(private val rep: String) {
+    TWO("2"),
+    THREE("3"),
+    FOUR("4"),
+    FIVE("5"),
+    SIX("6"),
+    SEVEN("7"),
+    EIGHT("8"),
+    NINE("9"),
+    TEN("10"),
+    JACK("J"),
+    QUEEN("Q"),
+    KING("K"),
+    ACE("A");
 
     override fun toString(): String {
-        return rep;
+        return rep
     }
 }
