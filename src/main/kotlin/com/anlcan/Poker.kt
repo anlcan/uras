@@ -41,8 +41,9 @@ class Player(val cards: MutableList<Card> = mutableListOf()) {
 
 }
 
-class Hand(val cards: List<Card>) : Comparable<Hand> {
-    val rank: Rank = Rank.of(cards)
+class Hand(listOfCards: List<Card>) : Comparable<Hand> {
+    val cards: List<Card> = listOfCards.sortedByDescending { it.value }
+    val rank: Rank = Rank.of(listOfCards)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -59,10 +60,33 @@ class Hand(val cards: List<Card>) : Comparable<Hand> {
 
     override fun compareTo(other: Hand): Int {
         return if (other.rank == rank) {
-            0
+
+            for (i in 0..5) {
+                if (cards[i].compareTo(other.cards[i]) != 0) {
+                    return cards[i].compareTo(other.cards[i])
+                }
+            }
+            return 0
+            /*
+            when(rank) {
+                Rank.PAIR -> {
+
+                }
+
+                Rank.ROYAL_FLUSH -> 0
+                Rank.STRAIGHT_FLUSH -> TODO()
+                Rank.FOUR_OF_A_KIND -> TODO()
+                Rank.FULL_HOUSE -> TODO()
+                Rank.FLUSH -> TODO()
+                Rank.STRAIGHT -> TODO()
+                Rank.THREE_OF_A_KIND -> TODO()
+                Rank.TWO_PAIRS -> TODO()
+                Rank.HIGH_CARD -> TODO()
+
+            }
+            */
         } else {
-            // bad enum order....sorry
-            rank.compareTo(other.rank) * -1
+            rank.compareTo(other.rank)
         }
     }
 
@@ -70,17 +94,23 @@ class Hand(val cards: List<Card>) : Comparable<Hand> {
 
 
 enum class Rank {
-
-    ROYAL_FLUSH,
-    STRAIGHT_FLUSH,
-    FOUR_OF_A_KIND,
-    FULL_HOUSE,
-    FLUSH,
-    STRAIGHT,
-    THREE_OF_A_KIND,
-    TWO_PAIRS,
+    /**
+     * If the high cards in two players' hands is the same,
+     * the second-highest card becomes decisive.
+     * If these cards are also the same, the third-highest card plays and so on. These cards are known as the kicker.
+     */
+    HIGH_CARD,
     PAIR,
-    HIGH_CARD;
+    TWO_PAIRS,
+    THREE_OF_A_KIND,
+    STRAIGHT,
+    FLUSH,
+    FULL_HOUSE,
+    FOUR_OF_A_KIND,
+    STRAIGHT_FLUSH,
+    ROYAL_FLUSH;
+
+;
 
 
     companion object {

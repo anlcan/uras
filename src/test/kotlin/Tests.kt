@@ -143,6 +143,69 @@ class Test {
 
     }
 
+    @Test
+    fun testSameRank(){
+        val highCard1 = Hand(
+                mutableListOf(Card(Suit.Spades, Value.ACE),
+                        Card(Suit.Hearts, Value.FOUR),
+                        Card(Suit.Clubs, Value.TWO),
+                        Card(Suit.Diamonds, Value.SEVEN),
+                        Card(Suit.Spades, Value.QUEEN)).shuffled())
+
+        Assert.assertEquals(Rank.HIGH_CARD, highCard1.rank)
+
+        val highCard2 = Hand(
+                mutableListOf(Card(Suit.Spades, Value.ACE),
+                        Card(Suit.Hearts, Value.FOUR),
+                        Card(Suit.Clubs, Value.TWO),
+                        Card(Suit.Diamonds, Value.SEVEN),
+                        Card(Suit.Spades, Value.QUEEN)).shuffled())
+
+        Assert.assertEquals(Rank.HIGH_CARD, highCard2.rank)
+    }
+    
+    @Test
+    fun testKicker(){
+        //https://www.pokerlistings.com/strategy/beginner/how-to-determine-the-winning-hand
+
+        val flush1 = Hand(
+                mutableListOf(Card(Suit.Spades, Value.ACE),
+                        Card(Suit.Spades, Value.FOUR),
+                        Card(Suit.Spades, Value.THREE),
+                        Card(Suit.Spades, Value.SEVEN),
+                        Card(Suit.Spades, Value.QUEEN)).shuffled())
+
+
+        val flush2 = Hand(
+                mutableListOf(Card(Suit.Spades, Value.ACE),
+                        Card(Suit.Spades, Value.FOUR),
+                        Card(Suit.Spades, Value.TWO),
+                        Card(Suit.Spades, Value.SEVEN),
+                        Card(Suit.Spades, Value.QUEEN)).shuffled())
+
+        Assert.assertEquals(1, flush1.compareTo(flush2))
+
+
+        val twoParis1 = Hand(
+                mutableListOf(Card(Suit.Spades, Value.ACE),
+                        Card(Suit.Hearts, Value.ACE),
+                        Card(Suit.Clubs, Value.TEN),
+                        Card(Suit.Diamonds, Value.QUEEN),
+                        Card(Suit.Spades, Value.QUEEN)).shuffled())
+
+        val twoParis2 = Hand(
+                mutableListOf(Card(Suit.Spades, Value.KING),
+                        Card(Suit.Hearts, Value.KING),
+                        Card(Suit.Clubs, Value.TEN),
+                        Card(Suit.Diamonds, Value.QUEEN),
+                        Card(Suit.Spades, Value.QUEEN)).shuffled())
+        Assert.assertEquals(1, twoParis1.compareTo(twoParis2))
+
+
+
+    }
+    
+    
 
 
 }
