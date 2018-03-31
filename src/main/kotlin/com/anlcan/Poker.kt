@@ -3,12 +3,13 @@ package com.anlcan
 /**
  * Created on 20.03.18.
  */
-class Deck{
+class Deck {
 
     val cards = mutableListOf<Card>()
+
     init {
-        for (color in Color.values()){
-            for (value in Value.values()){
+        for (color in Suit.values()) {
+            for (value in Value.values()) {
                 cards.add(Card(color, value))
             }
         }
@@ -16,27 +17,37 @@ class Deck{
         shuffle()
     }
 
-    fun shuffle(){
+    fun shuffle() {
         cards.shuffle();
     }
 
-    fun next():Card {
-        val c =  cards[0]
+    fun next(): Card {
+        val c = cards[0]
         cards.removeAt(0)
         return c
     }
+
+    fun next(size: Int): List<Card> {
+        val cards = mutableListOf<Card>()
+        for (i in 0..size) {
+            cards.add(next())
+        }
+        return cards
+    }
+
 }
 
 class Player(val cards: MutableList<Card> = mutableListOf()) {
 
 }
 
-class Hand(val cards: Array<Card>) {
+class Hand(val cards: List<Card>) : Comparable<Hand> {
+    val rank: Rank = Rank.of(cards)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
 
-        val otherHand:Hand = other as Hand
+        val otherHand: Hand = other as Hand
 
         cards.toMutableList().containsAll(otherHand.cards.toMutableList())
         return true
@@ -45,10 +56,97 @@ class Hand(val cards: Array<Card>) {
     override fun toString(): String {
         return cards.map { it.toString() }.joinToString(" ")
     }
+
+    override fun compareTo(other: Hand): Int {
+        return if (other.rank == rank) {
+            0
+        } else {
+            // bad enum order....sorry
+            rank.compareTo(other.rank) * -1
+        }
+    }
+
 }
-data class Card(val color: Color, val value: Value){
+
+
+enum class Rank {
+
+    ROYAL_FLUSH,
+    STRAIGHT_FLUSH,
+    FOUR_OF_A_KIND,
+    FULL_HOUSE,
+    FLUSH,
+    STRAIGHT,
+    THREE_OF_A_KIND,
+    TWO_PAIRS,
+    PAIR,
+    HIGH_CARD;
+
+
+    companion object {
+        fun of(cards: List<Card>): Rank {
+            val sorted = cards.sortedByDescending { c -> c.value }
+
+            val isOrdered = isOrdered(cards)
+            val isSameSuit = isSameSuit(cards)
+
+            return if (isOrdered) {
+                if (isSameSuit) {
+                    if (sorted[0].value == Value.ACE)
+                        ROYAL_FLUSH
+                    else
+                        STRAIGHT_FLUSH
+                } else {
+                    STRAIGHT
+                }
+            } else if (isSameSuit) {
+                FLUSH
+            } else {
+
+                val grouped = sorted.groupBy { it.value }.values.map { it.size }
+                if (grouped.contains(4)) {
+                    FOUR_OF_A_KIND
+                } else if (grouped.contains(3)) {
+                    if (grouped.contains(2))
+                        FULL_HOUSE
+                    else
+                        THREE_OF_A_KIND
+                } else if (grouped.contains(2)) {
+                    val first = grouped.indexOf(2)
+                    val second = grouped.lastIndexOf(2)
+                    if (first == second)
+                        PAIR
+                    else
+                        TWO_PAIRS
+
+                } else {
+                    HIGH_CARD
+                }
+            }
+        }
+
+        fun isOrdered(cards: List<Card>): Boolean {
+            val sorted = cards.sortedByDescending { c -> c.value }
+            val diff = sorted.take(4)
+                    .map { c1 -> c1.value.ordinal - sorted[4].value.ordinal }
+
+            return listOf(4, 3, 2, 1) == diff
+        }
+
+        // sanki groupBy daha iyi ?
+        fun isSameSuit(cards: List<Card>): Boolean {
+            return cards.take(4).all { c -> cards[4].suit == c.suit }
+        }
+    }
+}
+
+data class Card(val suit: Suit, val value: Value) : Comparable<Card> {
+    override fun compareTo(other: Card): Int {
+        return value.compareTo(other.value)
+    }
+
     override fun toString(): String {
-        return "$value$color"
+        return "$value $suit"
     }
 
 }
@@ -57,7 +155,7 @@ data class Card(val color: Color, val value: Value){
  * &spades;	&hearts;	&diams;	&clubs;
  * U+2664	U+2661	U+2662	U+2667
  */
-enum class Color(val rep:String) {
+enum class Suit(val rep: String) {
     Spades("\u2664"),
     Hearts("\u2661"),
     Diamonds("\u2662"),
@@ -68,8 +166,9 @@ enum class Color(val rep:String) {
     }
 }
 
-enum class Value (val rep:String){
+enum class Value(val rep: String) {
     TWO("2"), THREE("3"), FOUR("4"), FIVE("5"), SIX("6"), SEVEN("7"), EIGHT("8"), NINE("9"), TEN("10"), JACK("J"), QUEEN("Q"), KING("K"), ACE("A");
+
     override fun toString(): String {
         return rep;
     }

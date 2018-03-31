@@ -39,7 +39,7 @@ fun allHands(hand: List<Card>, table: List<Card>): List<Hand> {
 
     val perms = permutation(table, 3)
     perms.forEach{ l -> l.addAll(hand) }
-    return perms.map { l -> Hand(l.toTypedArray()) }.distinct()
+    return perms.map { l -> Hand(l) }.distinct()
 }
 
 fun permutation(list: List<Card>, size: Int): List<MutableList<Card>> {
