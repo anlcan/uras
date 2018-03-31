@@ -12,25 +12,29 @@ fun toHtml(table:List<Card>, players:List<Player>):String {
     html +="</tr>"
     html +="</table>"
 
-    html +="<table>"
-    html +="<tr>"
     for (p in players) {
+        html +="<caption>${p.bestHand?.rank}</caption>"
+        html +="<table>"
+        html +="<tr>"
         for (c in p.cards()) {
-            html += "<td><img src='src/main/resources/img/${toImage(c)}' width=\"30%\" height=\"30%\"/> </td>"
+            html += "<td> ${toImageTag(c)} </td>"
         }
 
         for (c in p.bestHand!!.cards) {
-            html += "<td><img src='src/main/resources/img/${toImage(c)}' width=\"30%\" height=\"30%\"/> </td>"
+            html += "<td>${toImageTag(c)}</td>"
         }
 
 
         html += "</tr>"
+        html +="</table>"
     }
 
-    html +="</table>"
     html +="</body>"
 
     return html
+}
+fun toImageTag(c: Card): String{
+    return "<img src='src/main/resources/img/${toImage(c)}' width=\"30%\" height=\"30%\"/>"
 }
 
 fun toImage(c: Card): String {
