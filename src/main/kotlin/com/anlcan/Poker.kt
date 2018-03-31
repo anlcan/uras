@@ -17,7 +17,7 @@ class Deck {
         shuffle()
     }
 
-    private fun shuffle() {
+    fun shuffle() {
         cards.shuffle()
     }
 
@@ -33,9 +33,6 @@ class Deck {
 
 }
 
-class Player(val cards: MutableList<Card> = mutableListOf()) {
-
-}
 
 class Hand(listOfCards: List<Card>) : Comparable<Hand> {
     val cards: List<Card> = listOfCards.sortedByDescending { it.value }
@@ -55,7 +52,7 @@ class Hand(listOfCards: List<Card>) : Comparable<Hand> {
     override fun compareTo(other: Hand): Int {
         return if (other.rank == rank) {
 
-            for (i in 0..5) {
+            for (i in 0..4) {
                 if (cards[i].compareTo(other.cards[i]) != 0) {
                     return cards[i].compareTo(other.cards[i])
                 }

@@ -1,13 +1,21 @@
 import com.anlcan.*
 import org.junit.Assert
+import org.junit.Before
 import org.junit.Test
+import kotlin.test.assertEquals
+
 /**
  * Created on 20.03.18.
  */
 
 class Test {
 
-    private val deck = Deck()
+    private lateinit var deck: Deck
+
+    @Before
+    fun init() {
+        deck = Deck()
+    }
 
     @Test
     fun testPerms(){
@@ -141,6 +149,7 @@ class Test {
         order.all { handHigh ->
             order.reversed().take(order.indexOf(handHigh)).all { handLow-> handHigh > handLow } }
 
+        assertEquals(order.shuffled().sortedDescending()[0], royal_flush)
     }
 
     @Test
