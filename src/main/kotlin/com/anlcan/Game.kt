@@ -1,5 +1,7 @@
 package com.anlcan
 
+import java.util.*
+
 /**
  * Created on 31.03.18.
  */
@@ -10,16 +12,34 @@ class Game {
     private val deck = Deck()
     val table = mutableListOf<Card>()
 
+    var buttonPlayer: Player? = null
+
     fun addPlayer(player:Player) {
         watchers.add(player)
     }
 
+    fun players():List<Player>{
+        return players.toList()
+    }
+
+    fun gameOrder():List<Player> {
+        val index = players.indexOf(buttonPlayer)
+       return mutableListOf(players.subList(index, players.size), players.subList(0, index))
+                .flatten()
+
+    }
+
     fun run():List<Player>{
+
         reset()
         seat()
+        blinds()
         deal()
+        actions()
         flop()
+        actions()
         river()
+        actions()
         turn()
         val hand = Hand(table)
         println("FLOP: $hand")
@@ -30,9 +50,26 @@ class Game {
         return winners
     }
 
-    private fun seat() {
+    private fun actions() {
+        for (player in players.filter { !it.folded }){
+            val action = player.action()
+
+        }
+
+    }
+
+    private fun blinds() {
+
+    }
+
+    fun seat() {
         players.addAll(watchers)
         watchers.clear()
+        this.buttonPlayer = this.buttonPlayer?.let {
+            players[(players.indexOf(it) + 1) % players.size]
+        } ?: let{
+            players[Random().nextInt(players.size)]
+        }
     }
 
     private fun showdown(): List<Player> {
@@ -73,7 +110,7 @@ class Game {
     }
 
 
-    private fun reset(){
+    fun reset(){
         deck.shuffle()
         table.clear()
         for(player in players){
@@ -84,7 +121,11 @@ class Game {
 
 }
 
-class Player(val name:String) {
+enum class ACTION {
+    FOLD, CHECK, RAISE
+}
+
+class Player(val name:String, var money:Int =0) {
 
     private val _cards:MutableList<Card> = mutableListOf()
     var folded:Boolean = false; private set
@@ -104,8 +145,14 @@ class Player(val name:String) {
         folded = false
     }
 
-    fun fold(){
-        folded = true
+
+    fun blind(blind:Int):Int {
+        money -= blind
+        return money
+    }
+
+    fun action(): ACTION {
+        return ACTION.FOLD
     }
 
 
