@@ -5,14 +5,14 @@ import java.util.*
 /**
  * Created on 31.03.18.
  */
-class Game {
+class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
 
     private val players = mutableListOf<Player>()
     private val watchers = mutableListOf<Player>()
     private val deck = Deck()
     val table = mutableListOf<Card>()
 
-    var buttonPlayer: Player? = null
+    lateinit var dealer: Player
 
     fun addPlayer(player:Player) {
         watchers.add(player)
@@ -22,8 +22,8 @@ class Game {
         return players.toList()
     }
 
-    fun gameOrder():List<Player> {
-        val index = players.indexOf(buttonPlayer)
+    fun actionOrder():List<Player> {
+        val index = players.indexOf(nextPlayer(dealer))
        return mutableListOf(players.subList(index, players.size), players.subList(0, index))
                 .flatten()
 
@@ -55,21 +55,32 @@ class Game {
             val action = player.action()
 
         }
-
     }
 
-    private fun blinds() {
-
+    fun blinds() {
+        val small:Player = prevPlayer(dealer)
+        small.blind(smallBlind)
+        val big:Player = prevPlayer(small)
+        big.blind(bigBlind)
     }
 
     fun seat() {
         players.addAll(watchers)
         watchers.clear()
-        this.buttonPlayer = this.buttonPlayer?.let {
-            players[(players.indexOf(it) + 1) % players.size]
-        } ?: let{
+        players.filter{ it.money < bigBlind }.forEach{players.remove(it)}
+
+        this.dealer = if (this::dealer.isInitialized)
+            nextPlayer(this.dealer)
+        else
             players[Random().nextInt(players.size)]
-        }
+    }
+
+     fun nextPlayer(it:Player): Player {
+        return players[(players.indexOf(it) + 1) % players.size]
+    }
+
+     fun prevPlayer(it:Player): Player {
+        return players[(players.indexOf(it) -1 + players.size) % players.size]
     }
 
     private fun showdown(): List<Player> {
@@ -103,7 +114,7 @@ class Game {
 
     private fun deal(){
         for (i in 1..2) {
-            for (p: Player in players) {
+            for (p: Player in actionOrder()) {
                 p.add(deck.next())
             }
         }
