@@ -1,25 +1,45 @@
 package com.anlcan
 
+import java.util.*
+
 /**
  * Created on 31.03.18.
  */
-class Game {
+class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
 
     private val players = mutableListOf<Player>()
     private val watchers = mutableListOf<Player>()
     private val deck = Deck()
     val table = mutableListOf<Card>()
 
+    lateinit var dealer: Player
+
     fun addPlayer(player:Player) {
         watchers.add(player)
     }
 
+    fun players():List<Player>{
+        return players.toList()
+    }
+
+    fun actionOrder():List<Player> {
+        val index = players.indexOf(nextPlayer(dealer))
+       return mutableListOf(players.subList(index, players.size), players.subList(0, index))
+                .flatten()
+
+    }
+
     fun run():List<Player>{
+
         reset()
         seat()
+        blinds()
         deal()
+        actions()
         flop()
+        actions()
         river()
+        actions()
         turn()
         val hand = Hand(table)
         println("FLOP: $hand")
@@ -30,9 +50,37 @@ class Game {
         return winners
     }
 
-    private fun seat() {
+    private fun actions() {
+        for (player in players.filter { !it.folded }){
+            val action = player.action()
+
+        }
+    }
+
+    fun blinds() {
+        val small:Player = prevPlayer(dealer)
+        small.blind(smallBlind)
+        val big:Player = prevPlayer(small)
+        big.blind(bigBlind)
+    }
+
+    fun seat() {
         players.addAll(watchers)
         watchers.clear()
+        players.filter{ it.money < bigBlind }.forEach{players.remove(it)}
+
+        this.dealer = if (this::dealer.isInitialized)
+            nextPlayer(this.dealer)
+        else
+            players[Random().nextInt(players.size)]
+    }
+
+     fun nextPlayer(it:Player): Player {
+        return players[(players.indexOf(it) + 1) % players.size]
+    }
+
+     fun prevPlayer(it:Player): Player {
+        return players[(players.indexOf(it) -1 + players.size) % players.size]
     }
 
     private fun showdown(): List<Player> {
@@ -66,14 +114,14 @@ class Game {
 
     private fun deal(){
         for (i in 1..2) {
-            for (p: Player in players) {
+            for (p: Player in actionOrder()) {
                 p.add(deck.next())
             }
         }
     }
 
 
-    private fun reset(){
+    fun reset(){
         deck.shuffle()
         table.clear()
         for(player in players){
@@ -84,7 +132,11 @@ class Game {
 
 }
 
-class Player(val name:String) {
+enum class ACTION {
+    FOLD, CHECK, RAISE
+}
+
+class Player(val name:String, var money:Int =0) {
 
     private val _cards:MutableList<Card> = mutableListOf()
     var folded:Boolean = false; private set
@@ -104,8 +156,14 @@ class Player(val name:String) {
         folded = false
     }
 
-    fun fold(){
-        folded = true
+
+    fun blind(blind:Int):Int {
+        money -= blind
+        return money
+    }
+
+    fun action(): ACTION {
+        return ACTION.FOLD
     }
 
 
