@@ -42,7 +42,7 @@ class GameTests {
             g.reset()
             g.seat()
             assertEquals(g.players().size,g.actionOrder().size)
-            println("Button player is ${g.dealer?.name}")
+            println("Button player is ${g.dealer.name}")
         }
     }
 
@@ -60,13 +60,39 @@ class GameTests {
 
     @Test
     fun testBlinds(){
-        val g = Game()
+        val g = Game(5,10)
         randomPlayers(4).forEach{g.addPlayer(it)}
         g.reset()
         g.seat()
         g.blinds()
         assertTrue {  g.prevPlayer(g.dealer).money < g.dealer.money }
         assertTrue {  g.prevPlayer(g.prevPlayer(g.dealer)).money < g.prevPlayer(g.dealer).money }
-
+        assertEquals(15, g.potSize())
     }
+
+    @Test
+    fun testActions() {
+        val g = Game(5, 10)
+        randomPlayers(4).forEach { g.addPlayer(it) }
+
+
+        g.reset()
+        g.seat()
+
+
+        g.blinds()
+
+        g.deal()
+        g.actions()
+
+        assertEquals(g.players().size * g.bigBlind(),  g.potSize())
+
+        g.flop()
+        g.actions()
+        g.river()
+        g.actions()
+        g.turn()
+        g.actions()
+    }
+
 }

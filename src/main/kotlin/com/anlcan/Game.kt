@@ -5,14 +5,31 @@ import java.util.*
 /**
  * Created on 31.03.18.
  */
-class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
+class Game (private val smallBlind:Int=5, private val bigBlind:Int=smallBlind*2){
 
     private val players = mutableListOf<Player>()
     private val watchers = mutableListOf<Player>()
     private val deck = Deck()
-    val table = mutableListOf<Card>()
+    private val table = mutableListOf<Card>()
+    private val pot = mutableListOf<List<Action>>()
 
+    var stage:STAGE = STAGE.DEAL
+    private set
+
+    /**
+     * initialized at {@link Game::seat} method
+     */
     lateinit var dealer: Player
+    var smallBlindPlayer: Player? = null
+    var bigBlindPlayer: Player? = null
+
+    fun smallBlind(): Int {
+        return smallBlind
+    }
+
+    fun bigBlind(): Int {
+        return bigBlind
+    }
 
     fun addPlayer(player:Player) {
         watchers.add(player)
@@ -22,9 +39,15 @@ class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
         return players.toList()
     }
 
+    fun table():List<Card> {
+        return table.toList()
+    }
+
     fun actionOrder():List<Player> {
         val index = players.indexOf(nextPlayer(dealer))
-       return mutableListOf(players.subList(index, players.size), players.subList(0, index))
+        return mutableListOf(
+            players.subList(index, players.size),
+            players.subList(0, index))
                 .flatten()
 
     }
@@ -41,6 +64,8 @@ class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
         river()
         actions()
         turn()
+        actions()
+
         val hand = Hand(table)
         println("FLOP: $hand")
 
@@ -50,18 +75,36 @@ class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
         return winners
     }
 
-    private fun actions() {
-        for (player in players.filter { !it.folded }){
-            val action = player.action()
+    fun actions() {
+        val playersLeft = actionOrder().filter { !it.folded }
+        val actions = mutableListOf<Action>()
+        for (player in playersLeft){
+            val action = player.action(this, actions)
+            isCompatible(action)
+            actions.add(action)
+            println(action)
 
         }
+        pot.add(actions)
+    }
+
+    private fun isCompatible(action: Action): Boolean {
+        return true
     }
 
     fun blinds() {
-        val small:Player = prevPlayer(dealer)
-        small.blind(smallBlind)
-        val big:Player = prevPlayer(small)
-        big.blind(bigBlind)
+        smallBlindPlayer = prevPlayer(dealer)
+        smallBlindPlayer?.blind(smallBlind)
+
+        bigBlindPlayer = prevPlayer(smallBlindPlayer!!)
+        bigBlindPlayer?.blind(bigBlind)
+
+        pot.add(listOf(Action(bigBlindPlayer!!.name, ActionType.BLIND, bigBlind),
+                        Action(smallBlindPlayer!!.name, ActionType.BLIND, smallBlind)))
+    }
+
+    fun potSize():Int {
+        return pot.sumBy { it.sumBy {  it.money }}
     }
 
     fun seat() {
@@ -94,25 +137,28 @@ class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
     }
 
 
-    private fun turn() {
+    fun turn() {
         assert(table.size ==4)
         deck.next() //burn
         table.add(deck.next()) // turn
+        stage = STAGE.TURN
     }
 
-    private fun river() {
+    fun river() {
         assert(table.size ==3)
         deck.next() //burn
         table.add(deck.next()) // river
+        stage = STAGE.RIVER
     }
 
-    private fun flop() {
+    fun flop() {
         assert(table.size ==0)
         deck.next() //burn
         table.addAll(deck.next(3))
+        stage = STAGE.FLOP
     }
 
-    private fun deal(){
+    fun deal(){
         for (i in 1..2) {
             for (p: Player in actionOrder()) {
                 p.add(deck.next())
@@ -124,6 +170,7 @@ class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
     fun reset(){
         deck.shuffle()
         table.clear()
+        pot.clear()
         for(player in players){
             player.clear()
         }
@@ -131,43 +178,15 @@ class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
 
 
 }
+data class Action(val playerId:String, val type:ActionType, val money:Int=0)
+enum class STAGE {
+    DEAL, FLOP, RIVER, TURN
+}
+enum class ActionType {
+    BLIND, FOLD, CHECK, RAISE, CALL
 
-enum class ACTION {
-    FOLD, CHECK, RAISE
 }
 
-class Player(val name:String, var money:Int =0) {
-
-    private val _cards:MutableList<Card> = mutableListOf()
-    var folded:Boolean = false; private set
-    var bestHand:Hand? = null
-
-    fun cards():List<Card>{
-        return _cards.toList()
-    }
-
-    fun add(card:Card) {
-        assert(_cards.size<2)
-        _cards.add(card)
-    }
-
-    fun clear() {
-        _cards.clear()
-        folded = false
-    }
-
-
-    fun blind(blind:Int):Int {
-        money -= blind
-        return money
-    }
-
-    fun action(): ACTION {
-        return ACTION.FOLD
-    }
-
-
-}
 
 fun allHands(hand: List<Card>, table: List<Card>): List<Hand> {
     //table has 5 cards

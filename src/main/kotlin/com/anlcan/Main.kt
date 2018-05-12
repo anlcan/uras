@@ -16,7 +16,7 @@ fun main(args: Array<String>) {
 
 
     File("game.html").printWriter().use { out ->
-       out.println(toHtml(game.table, players))
+       out.println(toHtml(game.table(), players))
     }
 }
 
