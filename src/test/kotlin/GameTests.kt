@@ -71,28 +71,26 @@ class GameTests {
     }
 
     @Test
-    fun testActions() {
+    fun testDeal() {
         val g = Game(5, 10)
-        randomPlayers(4).forEach { g.addPlayer(it) }
-
+        randomPlayers(2).forEach { g.addPlayer(it) }
 
         g.reset()
         g.seat()
-
-
         g.blinds()
-
         g.deal()
-        g.actions()
 
-        assertEquals(g.players().size * g.bigBlind(),  g.potSize())
+        assertEquals(g.players().size * g.bigBlind,  g.potSize())
+    }
 
-        g.flop()
-        g.actions()
-        g.river()
-        g.actions()
-        g.turn()
-        g.actions()
+    @Test
+    fun testRun() {
+        val g = Game(5, 10)
+        randomPlayers(3).forEach { g.addPlayer(it) }
+        val winners = g.run()
+        println("FLOP: ${g.table()}")
+        winners.forEach{p -> println("${p.name} ${p.cards()} -> ${p.bestHand}")}
+        assertTrue(winners.size>1)
     }
 
 }

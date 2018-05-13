@@ -12,9 +12,9 @@ class Checker :PokerStrategy {
         return when(game.stage) {
             STAGE.DEAL -> {
                 when (player) {
-                    game.smallBlindPlayer -> Action(player.name, ActionType.CALL, game.bigBlind() - game.smallBlind())
+                    game.smallBlindPlayer -> Action(player.name, ActionType.CALL, game.bigBlind - game.smallBlind)
                     game.bigBlindPlayer -> Action(player.name, ActionType.CHECK)
-                    else -> Action(player.name, ActionType.CALL, game.bigBlind())
+                    else -> Action(player.name, ActionType.CALL, game.bigBlind)
                 }
             }
             STAGE.FLOP -> player.buildAction(ActionType.CHECK)
