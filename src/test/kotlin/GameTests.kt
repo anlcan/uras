@@ -86,11 +86,15 @@ class GameTests {
     @Test
     fun testRun() {
         val g = Game(5, 10)
-        randomPlayers(3).forEach { g.addPlayer(it) }
+        randomPlayers(5).forEach { g.addPlayer(it) }
         val winners = g.run()
         println("FLOP: ${g.table()}")
-        winners.forEach{p -> println("${p.name} ${p.cards()} -> ${p.bestHand}")}
-        assertTrue(winners.size>1)
+        winners.forEach{p -> println("${p.name} ${p.cards()} -> ${p.bestHand} (${p.bestHand?.rank})")}
+        assertTrue(winners.size>0)
+        println("----")
+        g.players().filter{!winners.contains(it)}
+            .forEach{println("${it.name} ${it.cards()} -> ${it.bestHand} (${it.bestHand?.rank})")}
+
     }
 
 }

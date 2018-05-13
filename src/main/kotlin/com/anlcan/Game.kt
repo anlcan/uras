@@ -136,7 +136,22 @@ class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
     fun run():List<Player>{
 
         steps.forEach{it()}
-        return showdown()
+        return winners()
+    }
+
+    fun winners():List<Player> {
+        val bestHandForPlayers = showdown()
+        val result = mutableListOf(bestHandForPlayers[0])
+
+        for(p in bestHandForPlayers.takeLast(bestHandForPlayers.size-1)){
+            when (p.bestHand!!.compareTo(result[0].bestHand!!)) {
+                1 -> assert(true, {"broken sort"})
+                0 -> result.add(p)
+            //-1 -> return result.map { it.player }
+            }
+        }
+
+        return result.map{it}
     }
 
     private fun isCompatible(action: Action): Boolean {
@@ -155,6 +170,12 @@ class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
         return players[(players.indexOf(it) -1 + players.size) % players.size]
     }
 
+//    private fun showdown(listOfPlayers:List<Player>, tableCards:List<Card>): List<PlayerGameEnd> {
+//        return  listOfPlayers
+//            .map { PlayerGameEnd(it,  allHands(it.cards(), tableCards).sortedDescending()[0]) }
+//            .sortedByDescending(PlayerGameEnd::hand)
+//
+//    }
     private fun showdown(): List<Player> {
         val groupBy = players
                 .filter { !it.folded }
@@ -162,8 +183,9 @@ class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
         return groupBy
                 .mapValues { it.value[0] }
                 .map { (k,v)-> v.bestHand = k;v }
-
+            .sortedByDescending { it.bestHand }
     }
+
 }
 
 data class Action(val playerId:String, val type:ActionType, val money:Int=0)
@@ -182,9 +204,14 @@ fun allHands(hand: List<Card>, table: List<Card>): List<Hand> {
     assert(table.size == 5)
     assert(hand.size == 2)
 
-    val perms = permutation(table, 3)
-    perms.forEach{ l -> l.addAll(hand) }
-    return perms.map { l -> Hand(l) }.distinct()
+    //OMAHA
+    //val perms = permutation(table, 3)
+    //perms.forEach { l -> l.addAll(hand) }
+
+    //TEXAS
+    val all = table.toMutableList()
+    all.addAll(hand)
+    return permutation(all, 5).map { l -> Hand(l) }.distinct()
 }
 
 fun permutation(list: List<Card>, size: Int): List<MutableList<Card>> {
