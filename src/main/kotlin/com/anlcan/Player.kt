@@ -3,7 +3,28 @@ package com.anlcan
 /**
  * Created on 12.05.18.
  */
-class Player(val name:String, var money:Int =0) {
+interface PokerStrategy {
+    fun action(game: Game, player:Player, actions:List<Action>): Action
+}
+
+class Checker :PokerStrategy {
+    override fun action(game: Game, player: Player, actions:List<Action>): Action {
+        return when(game.stage) {
+            STAGE.DEAL -> {
+                when (player) {
+                    game.smallBlindPlayer -> Action(player.name, ActionType.CALL, game.bigBlind() - game.smallBlind())
+                    game.bigBlindPlayer -> Action(player.name, ActionType.CHECK)
+                    else -> Action(player.name, ActionType.CALL, game.bigBlind())
+                }
+            }
+            STAGE.FLOP -> player.buildAction(ActionType.CHECK)
+            STAGE.RIVER -> player.buildAction(ActionType.CHECK)
+            STAGE.TURN -> player.buildAction(ActionType.CHECK)
+        }
+    }
+}
+
+class Player(val name:String, var money:Int =0, private val strategy: PokerStrategy = Checker()) : PokerStrategy by strategy {
 
     private val _cards:MutableList<Card> = mutableListOf()
     var folded:Boolean = false; private set
@@ -28,22 +49,12 @@ class Player(val name:String, var money:Int =0) {
         return money
     }
 
-    fun myAction(type:ActionType, money:Int=0):Action {
+    fun buildAction(type:ActionType, money:Int=0):Action {
         return Action(this.name, type, money)
     }
 
-    fun action(game: Game, actions:List<Action>): Action {
-        return when(game.stage) {
-            STAGE.DEAL -> {
-                when {
-                    this == game.smallBlindPlayer -> Action(this.name, ActionType.CALL, game.bigBlind() - game.smallBlind())
-                    this == game.bigBlindPlayer -> Action(this.name, ActionType.CHECK)
-                    else -> Action(this.name, ActionType.CALL, game.bigBlind())
-                }
-            }
-            STAGE.FLOP -> myAction(ActionType.CHECK)
-            STAGE.RIVER -> myAction(ActionType.CHECK)
-            STAGE.TURN -> myAction(ActionType.CHECK)
-        }
+    fun action(game:Game, actions: List<Action>): Action {
+        return strategy.action(game, this, actions)
     }
+
 }
