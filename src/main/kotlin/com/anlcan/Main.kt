@@ -18,6 +18,3 @@ fun main(args: Array<String>) {
        out.println(toHtml(table.games.last().table(), players))
     }
 }
-
-
-

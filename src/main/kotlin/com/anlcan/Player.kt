@@ -1,7 +1,5 @@
 package com.anlcan
 
-import java.util.*
-
 /**
  * Created on 12.05.18.
  */
@@ -37,7 +35,7 @@ class Player(val name: String, var money: Int = 0, private val strategy: PokerSt
         return Action(this.name, type, money)
     }
 
-    fun action(game: Game, actions: List<Action>): Action {
+    fun nextAction(game: Game, actions: List<Action>): Action {
         val action = strategy.action(game, this, actions)
         if (action.type == ActionType.FOLD)
             folded = true

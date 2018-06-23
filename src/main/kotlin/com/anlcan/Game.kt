@@ -14,79 +14,81 @@ class Game (val players:List<Player>, val dealer:Player=players[0], val smallBli
     private val deck = Deck()
     private val table = mutableListOf<Card>()
     private val pot = mutableListOf<List<Action>>()
+    private val winners:MutableList<Player> = mutableListOf()
 
     val smallBlindPlayer = players.prevPlayer(dealer)
     val bigBlindPlayer = players.prevPlayer(smallBlindPlayer)
 
 
     /* GAME STEPS */
-    private fun round(count:Int, newStage:STAGE, burn:Boolean=true) {
+    private fun round(count:Int, newStage:STAGE, burn:Boolean=true) :Boolean {
         if (burn)
             deck.next() //burn
         table.addAll(deck.next(count))
         stage = newStage
-        actions()
+        println("----")
+        println("${this.stage}: ${this.table()}")
+        return actions()
+
     }
 
-    val deal = {
-        listOf(1,2).forEach{actionOrder().forEach{ it.add(deck.next())}}
-        round(0, STAGE.DEAL, burn = false)
-    }
-
-    val flop =  {
-        assert(table.size == 0)
-        round(3,STAGE.FLOP, burn = false)
-    }
-
-    val river = {
-        assert(table.size == 3)
-        round(1, STAGE.RIVER)
-    }
-
-    val turn = {
-        assert(table.size == 4)
-        round(1, STAGE.TURN)
-    }
-
-    val reset = {
-        deck.shuffle()
-        table.clear()
-        pot.clear()
-        for(player in players){
-            player.clear()
-        }
-    }
-
-    val blinds:()->Unit  = {
+    val blinds:()->Boolean  = {
         smallBlindPlayer.blind(smallBlind)
-
         bigBlindPlayer.blind(bigBlind)
 
         pot.add(listOf(Action(bigBlindPlayer.name, ActionType.BLIND, bigBlind),
             Action(smallBlindPlayer.name, ActionType.BLIND, smallBlind)))
     }
 
-    val actions:()->Unit =  {
+    fun actions():Boolean  {
         val playersLeft = actionOrder().filter { !it.folded }
         val actions = mutableListOf<Action>()
         for (player in playersLeft){
-            val action = player.action(this, actions)
+            val action = player.nextAction(this, actions)
             isCompatible(action)
             actions.add(action)
             println(action)
-
+            // did everybody folded except the next guy?
+            if (playersLeft.count { !it.folded } == 1){
+                println("everybody folded!")
+                winners.add(playersLeft.first { !it.folded })
+                return false
+            }
         }
-        pot.add(actions)
+
+        return pot.add(actions)
     }
 
-    private val steps = listOf(
+    fun run():List<Player>{
 
-                blinds,
-                deal,
-                flop,
-                river,
-                turn
-    )
+        run steps@{
+            listOf<() -> Boolean>(
+                {
+                    blinds()
+                },
+                {
+                    listOf(1, 2).forEach { actionOrder().forEach { it.add(deck.next()) } }
+                    round(0, STAGE.DEAL, burn = false)
+                },
+                {
+                    assert(table.size == 0)
+                    round(3, STAGE.FLOP, burn = false)
+                },
+                {
+                    assert(table.size == 3)
+                    round(1, STAGE.RIVER)
+                },
+                {
+                    assert(table.size == 4)
+                    round(1, STAGE.TURN)
+                },
+                {
+                    setWinners()
+                }
+            ).forEach { if (!it()) return@steps }
+        }
+        return winners()
+    }
 
     var stage:STAGE = STAGE.DEAL
     private set
@@ -95,6 +97,9 @@ class Game (val players:List<Player>, val dealer:Player=players[0], val smallBli
         return players.toList()
     }
 
+    fun winners():List<Player>{
+        return winners.toList()
+    }
     fun table():List<Card> {
         return table.toList()
     }
@@ -108,13 +113,7 @@ class Game (val players:List<Player>, val dealer:Player=players[0], val smallBli
 
     }
 
-    fun run():List<Player>{
-
-        steps.forEach{it()}
-        return winners()
-    }
-
-    fun winners():List<Player> {
+    fun setWinners():Boolean {
         val bestHandForPlayers = showdown()
         val result = mutableListOf(bestHandForPlayers[0])
 
@@ -126,7 +125,8 @@ class Game (val players:List<Player>, val dealer:Player=players[0], val smallBli
             }
         }
 
-        return result.map{it}
+        winners.addAll(result.map{it})
+        return true
     }
 
     private fun isCompatible(action: Action): Boolean {
@@ -154,7 +154,6 @@ class Game (val players:List<Player>, val dealer:Player=players[0], val smallBli
                 .map { (k,v)-> v.bestHand = k;v }
             .sortedByDescending { it.bestHand }
     }
-
 }
 
 data class Action(val playerId:String, val type:ActionType, val money:Int=0){

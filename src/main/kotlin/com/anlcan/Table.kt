@@ -32,6 +32,7 @@ class Table (private val watchers: MutableList<Player> = mutableListOf(), val sm
         players.addAll(watchers)
         watchers.clear()
         players.filter{ it.money < bigBlind }.forEach{losers.add(it); players.remove(it)}
+        players.forEach{it.clear()}
 
         this.dealer = if (this::dealer.isInitialized)
             players.nextPlayer(this.dealer)
@@ -43,17 +44,15 @@ class Table (private val watchers: MutableList<Player> = mutableListOf(), val sm
         watchers.add(player)
     }
 
-    fun run(){
+    fun run(): List<Player> {
         assert(this::dealer.isInitialized)
         assert(this.players.size > 1)
         seat()
 
-        if (players.size < 0)
-            return
-
         val g = Game(players, dealer, smallBlind, bigBlind)
-        val winners = g.run()
         games.add(g)
+        return g.run()
+
     }
 }
 

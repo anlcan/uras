@@ -1,6 +1,7 @@
 
 import com.anlcan.*
 import org.junit.Test
+import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
@@ -35,13 +36,6 @@ class TableTests {
 
 class GameTests {
 
-
-    private fun checkerPlayers(size: Int =3):List<Player> {
-        return (1..size).map { Player("Player $it", 20) }
-    }
-
-
-
     @Test
     fun testGameOrder(){
         val g = Game( randomPlayers(3))
@@ -62,7 +56,6 @@ class GameTests {
     fun testBlinds(){
         val g = Game(randomPlayers(4))
 
-        g.reset()
         g.blinds()
 
         assertTrue ( g.players().prevPlayer(g.dealer).money < g.dealer.money )
@@ -73,15 +66,46 @@ class GameTests {
 
     @Test
     fun testRun() {
-        val g = Game(randomPlayers(5))
+        val winner = "caller1"
+        val g = Game(
+            mutableListOf(
+                Player("floopper1", strategy = FoldAfterDeal()),
+                Player("floopper2", strategy = FoldAfterDeal()),
+                Player("floopper3", strategy = FoldAfterDeal()),
+                Player(winner, strategy = CallAfterDeal())
+            )
+        )
         val winners = g.run()
-        println("FLOP: ${g.table()}")
+        assertTrue(winners.isNotEmpty())
+        assertEquals(winners[0].name, winner)
+
         winners.forEach{p -> println("${p.name} ${p.cards()} -> ${p.bestHand} (${p.bestHand?.rank})")}
-        assertTrue(winners.size>0)
-        println("----")
+
         g.players().filter{!winners.contains(it)}
             .forEach{println("${it.name} ${it.cards()} -> ${it.bestHand} (${it.bestHand?.rank})")}
 
     }
 
+}
+
+class FoldAfterDeal(private val seed: Random = Random()) : PokerStrategy {
+    override fun action(game: Game, player: Player, actions: List<Action>): Action {
+
+        return if (game.stage == STAGE.DEAL) {
+            Checker().check(game, player)
+        } else {
+            player.buildAction(ActionType.FOLD)
+        }
+    }
+}
+
+class CallAfterDeal(private val seed: Random = Random()) : PokerStrategy {
+    override fun action(game: Game, player: Player, actions: List<Action>): Action {
+
+        return if (game.stage == STAGE.DEAL) {
+            Checker().check(game, player)
+        } else {
+            player.buildAction(ActionType.RAISE, 10)
+        }
+    }
 }
