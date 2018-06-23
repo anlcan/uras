@@ -7,15 +7,15 @@ import java.io.File
  */
 fun main(args: Array<String>) {
 
-    val players= listOf(Player("maverick"), Player("goose"))
-    val game = Game()
+    val players= listOf(Player("maverick", money = 40), Player("goose", money = 50))
+    val table = Table()
     for(p in players)
-        game.addPlayer(p)
+        table.addPlayer(p)
 
-    game.run()
+    table.run()
 
     File("game.html").printWriter().use { out ->
-       out.println(toHtml(game.table(), players))
+       out.println(toHtml(table.games.last().table(), players))
     }
 }
 

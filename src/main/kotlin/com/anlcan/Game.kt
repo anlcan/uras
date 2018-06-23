@@ -1,7 +1,6 @@
 package com.anlcan
 
 import javafx.stage.Stage
-import java.util.*
 
 /**
  * Created on 31.03.18.
@@ -10,13 +9,15 @@ data class GameState(var state:Stage) {
     //TODO(anlcan) don't pass the game but the state
 }
 
-class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
+class Game (val players:List<Player>, val dealer:Player=players[0], val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
 
-    private val players = mutableListOf<Player>()
-    private val watchers = mutableListOf<Player>()
     private val deck = Deck()
     private val table = mutableListOf<Card>()
     private val pot = mutableListOf<List<Action>>()
+
+    val smallBlindPlayer = players.nextPlayer(dealer)
+    val bigBlindPlayer = players.prevPlayer(smallBlindPlayer)
+
 
     /* GAME STEPS */
     private fun round(count:Int, newStage:STAGE, burn:Boolean=true) {
@@ -33,29 +34,18 @@ class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
     }
 
     val flop =  {
-        assert(table.size ==0)
+        assert(table.size == 0)
         round(3,STAGE.FLOP, burn = false)
     }
 
     val river = {
-        assert(table.size ==3)
+        assert(table.size == 3)
         round(1, STAGE.RIVER)
     }
 
     val turn = {
-        assert(table.size ==4)
+        assert(table.size == 4)
         round(1, STAGE.TURN)
-    }
-
-    val seat = {
-        players.addAll(watchers)
-        watchers.clear()
-        players.filter{ it.money < bigBlind }.forEach{players.remove(it)}
-
-        this.dealer = if (this::dealer.isInitialized)
-            nextPlayer(this.dealer)
-        else
-            players[Random().nextInt(players.size)]
     }
 
     val reset = {
@@ -68,14 +58,12 @@ class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
     }
 
     val blinds:()->Unit  = {
-        smallBlindPlayer = prevPlayer(dealer)
-        smallBlindPlayer?.blind(smallBlind)
+        smallBlindPlayer.blind(smallBlind)
 
-        bigBlindPlayer = prevPlayer(smallBlindPlayer!!)
-        bigBlindPlayer?.blind(bigBlind)
+        bigBlindPlayer.blind(bigBlind)
 
-        pot.add(listOf(Action(bigBlindPlayer!!.name, ActionType.BLIND, bigBlind),
-            Action(smallBlindPlayer!!.name, ActionType.BLIND, smallBlind)))
+        pot.add(listOf(Action(bigBlindPlayer.name, ActionType.BLIND, bigBlind),
+            Action(smallBlindPlayer.name, ActionType.BLIND, smallBlind)))
     }
 
     val actions:()->Unit =  {
@@ -92,8 +80,7 @@ class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
     }
 
     private val steps = listOf(
-                reset,
-                seat,
+
                 blinds,
                 deal,
                 flop,
@@ -104,17 +91,8 @@ class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
     var stage:STAGE = STAGE.DEAL
     private set
 
-    /**
-     * initialized at {@link Game::seat} method
-     */
-    lateinit var dealer: Player
-    var smallBlindPlayer: Player? = null
-    var bigBlindPlayer: Player? = null
 
 
-    fun addPlayer(player:Player) {
-        watchers.add(player)
-    }
 
     fun players():List<Player>{
         return players.toList()
@@ -125,7 +103,7 @@ class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
     }
 
     fun actionOrder():List<Player> {
-        val index = players.indexOf(nextPlayer(dealer))
+        val index = players.indexOf(players.nextPlayer(dealer))
         return mutableListOf(
             players.subList(index, players.size),
             players.subList(0, index))
@@ -162,13 +140,7 @@ class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
         return pot.sumBy { it.sumBy {  it.money }}
     }
 
-     fun nextPlayer(it:Player): Player {
-        return players[(players.indexOf(it) + 1) % players.size]
-    }
 
-     fun prevPlayer(it:Player): Player {
-        return players[(players.indexOf(it) -1 + players.size) % players.size]
-    }
 
 //    private fun showdown(listOfPlayers:List<Player>, tableCards:List<Card>): List<PlayerGameEnd> {
 //        return  listOfPlayers
@@ -188,7 +160,18 @@ class Game (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
 
 }
 
-data class Action(val playerId:String, val type:ActionType, val money:Int=0)
+data class Action(val playerId:String, val type:ActionType, val money:Int=0){
+    init {
+        assert(check(), {"$type should have money value > 0: $money"})
+    }
+
+    private fun check(): Boolean {
+        return when(type){
+            ActionType.CALL,ActionType.RAISE, ActionType.ALL_IN, ActionType.BLIND -> money > 0
+            else-> money == 0
+        }
+    }
+}
 
 enum class STAGE {
     DEAL, FLOP, RIVER, TURN

@@ -1,6 +1,7 @@
 
 import com.anlcan.Game
 import com.anlcan.Player
+import com.anlcan.RandomStrategy
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -13,6 +14,10 @@ import kotlin.test.assertTrue
 class GameTests {
 
     private fun randomPlayers(size: Int =3):List<Player> {
+        return (1..size).map { Player("Player $it", 20, strategy = RandomStrategy()) }
+    }
+
+    private fun checkerPlayers(size: Int =3):List<Player> {
         return (1..size).map { Player("Player $it", 20) }
     }
 
