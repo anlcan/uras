@@ -15,7 +15,7 @@ class Game (val players:List<Player>, val dealer:Player=players[0], val smallBli
     private val table = mutableListOf<Card>()
     private val pot = mutableListOf<List<Action>>()
 
-    val smallBlindPlayer = players.nextPlayer(dealer)
+    val smallBlindPlayer = players.prevPlayer(dealer)
     val bigBlindPlayer = players.prevPlayer(smallBlindPlayer)
 
 
@@ -90,9 +90,6 @@ class Game (val players:List<Player>, val dealer:Player=players[0], val smallBli
 
     var stage:STAGE = STAGE.DEAL
     private set
-
-
-
 
     fun players():List<Player>{
         return players.toList()

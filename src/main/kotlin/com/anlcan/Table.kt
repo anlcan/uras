@@ -5,15 +5,19 @@ import java.util.*
 /**
  * Created on 23.06.18.
  */
-class Table (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
+class Table (private val watchers: MutableList<Player> = mutableListOf(), val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
     /**
      * players waiting to go into game on the next round
      */
-    val watchers = mutableListOf<Player>()
+
     /**
      * currently playing players
      */
-    val players = mutableListOf<Player>()
+    private val players= mutableListOf<Player>()
+
+    fun players():List<Player>{
+        return players.toList()
+    }
 
     /**
      * players who cannot continue playing (ie run out of money
@@ -24,7 +28,7 @@ class Table (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
 
     lateinit var dealer:Player
 
-    val seat = {
+    fun seat() {
         players.addAll(watchers)
         watchers.clear()
         players.filter{ it.money < bigBlind }.forEach{losers.add(it); players.remove(it)}
@@ -40,7 +44,10 @@ class Table (val smallBlind:Int=5, val bigBlind:Int=smallBlind*2){
     }
 
     fun run(){
+        assert(this::dealer.isInitialized)
+        assert(this.players.size > 1)
         seat()
+
         if (players.size < 0)
             return
 
